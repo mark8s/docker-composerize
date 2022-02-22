@@ -10,49 +10,52 @@ envFileName="env.sh"
 
 docker ps --format "table {{.ID}}={{.Names}}"  > $containerFileName
 
-echo "--------- start ---------- " 
+echo "--------- start ---------- "
 containers=$(cat ./$containerFileName)
 
 rm -rf $dockerEnvFileName
 rm -rf $composerizeEnvFile
 
 for c in $containers
-do 
+do
     if [[ $c =~ "CONTAINER" ]]
     then
        continue
-    fi 
-    
+    fi
+
     if [[ $c =~ "ID=NAMES" ]]
     then
        continue
-    fi 
+    fi
 
     id=${c%%=*}
-    name=${c#*=} 
-     
+    name=${c#*=}
+
     docker-papa container -c $id > $dockerEnvFileName
-    sed -i 's/docker run/composerize docker run/g' $dockerEnvFileName
- 
-    containerName=${name#*name} 
-    serviceName=$containerName 
+
+    sed -i 's/.*docker run/composerize docker run/g' $dockerEnvFileName
+
+    containerName=${name#*name}
+    serviceName=$containerName
     if [[ $containerName =~ "k8s_POD" ]]
     then
       containerName=${containerName#*k8s_POD_}
-    else 
+    else
       containerName=${containerName#*k8s_}
-    fi 
-   
+    fi
+
     containerName=${containerName%%_*}
-    serviceName=$containerName    
-    
-    sed -i "s/$/ $serviceName/g" $dockerEnvFileName  
-       
-    $(cat ./$dockerEnvFileName) >> $composerizeEnvFile     
-    
+    serviceName=$containerName
+
+    sed -i "s/$/ $serviceName/g" $dockerEnvFileName
+
+    #echo  $(cat ./$dockerEnvFileName)
+
+    $(cat ./$dockerEnvFileName) >> $composerizeEnvFile
+
     echo "service:   "  $serviceName
 
-done 
+done
 
 rm -rf $containerFileName
 rm -rf $dockerEnvFileName
@@ -69,19 +72,19 @@ envs=$(cat ./$envFileName)
 for env in $envs
 do
   if [ $env != "export" ]
-  then 
+  then
     envKey=${env%%=*}
     envValue=${env#*=}
-    
+
   #  envKey=$(trim $envKey)
-  #  envValue=$(trim $envValue) 
-    
+  #  envValue=$(trim $envValue)
+
   #  echo "key: " $envKey
   #  echo "value: " $envValue
   # replace env var
     sed  "s|=$envValue|=\${$envKey}|g" $composerizeEnvFile > $composerizeEnvFileTmp
     mv $composerizeEnvFileTmp $composerizeEnvFile
-    
+
 fi
 
 done
@@ -94,6 +97,3 @@ duration=`echo $(($(date +%s -d "${timer_end}") - $(date +%s -d "${timer_start}"
 echo "start: " $timer_start
 echo "end: " $timer_end
 echo "spend: " $duration
-
-
-
