@@ -8,6 +8,7 @@ composerizeEnvFile="docker-composerize.yaml"
 composerizeEnvFileTmp="docker-composerize.yaml.tmp"
 envFileName="env.sh"
 
+# 获取正在运行的容器id和容器名称，格式为 id=name
 docker ps --format "table {{.ID}}={{.Names}}"  > $containerFileName
 
 echo "--------- start ---------- "
@@ -27,14 +28,15 @@ do
     then
        continue
     fi
-
+    # 得到容器id，以等号分隔
     id=${c%%=*}
+    # 得到容器名称
     name=${c#*=}
-
+    # 通过容器id获取容器运行参数以及命令
     docker-papa container -c $id > $dockerEnvFileName
-
+    # 替换命令为composerize docker run
     sed -i 's/.*docker run/composerize docker run/g' $dockerEnvFileName
-
+    # 截取容器名得到services名
     containerName=${name#*name}
     serviceName=$containerName
     if [[ $containerName =~ "k8s_POD" ]]
@@ -47,6 +49,7 @@ do
     containerName=${containerName%%_*}
     serviceName=$containerName
 
+    # 在每行的末尾一个services名
     sed -i "s/$/ $serviceName/g" $dockerEnvFileName
 
     #echo  $(cat ./$dockerEnvFileName)
@@ -60,11 +63,11 @@ done
 rm -rf $containerFileName
 rm -rf $dockerEnvFileName
 
-# delete redundant fields
+# 删除多余的"version:"和"services:"字段
 sed -i "/version:/d" $composerizeEnvFile
 sed -i "/services:/d" $composerizeEnvFile
 
-# add
+# 在第一行分别增加"version:"和"services:"字段
 sed -i '1i\services:' $composerizeEnvFile
 sed -i "1i\version: '3.0'" $composerizeEnvFile
 
@@ -76,15 +79,9 @@ do
     envKey=${env%%=*}
     envValue=${env#*=}
 
-  #  envKey=$(trim $envKey)
-  #  envValue=$(trim $envValue)
-
-  #  echo "key: " $envKey
-  #  echo "value: " $envValue
-  # replace env var
+  # 替换env.sh中value和compose文件中相同的值，并且compose中值的格式为${env.sh中key的名称}，如：${LC_MYSQL_ROOT_PASSWORD}
     sed  "s|=$envValue|=\${$envKey}|g" $composerizeEnvFile > $composerizeEnvFileTmp
     mv $composerizeEnvFileTmp $composerizeEnvFile
-
 fi
 
 done

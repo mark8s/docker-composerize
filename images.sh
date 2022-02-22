@@ -1,9 +1,9 @@
 #!/bin/bash
 
 imagesFileName="images.yaml"
-
 imagesTmpFileName="images-bak.yaml"
 
+# 获取运行容器的id 列表
 docker ps -q  > $imagesTmpFileName
 
 imageIds=$(cat ./$imagesTmpFileName)
@@ -11,6 +11,7 @@ imageIds=$(cat ./$imagesTmpFileName)
 rm -rf $imagesFileName
 touch $imagesFileName
 
+# 根据容器id  获取镜像地址
 for id in $imageIds
 do
   echo $id
@@ -26,6 +27,7 @@ images=$(cat ./$imagesFileName)
 
 ex="export IMAGE_"
 
+# 遍历镜像地址 做一些操作
 for image in $images
 do
   imageName="$image"
@@ -40,8 +42,8 @@ do
   _name=${name//-/_}
   # 转大写
   dxName=${_name^^}
+  # 去掉""
   dxName=${dxName//\"}
-
   # 拼接
   finalName=$ex$dxName"="$image
 
