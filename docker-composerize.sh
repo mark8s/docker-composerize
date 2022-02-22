@@ -1,5 +1,4 @@
 #!/bin/bash
-# 
 
 timer_start=`date "+%Y-%m-%d %H:%M:%S"`
 
@@ -9,21 +8,32 @@ composerizeEnvFile="docker-composerize.yaml"
 composerizeEnvFileTmp="docker-composerize.yaml.tmp"
 envFileName="env.sh"
 
-docker ps --format "table {{.Names}}"  > $containerFileName
+docker ps --format "table {{.ID}}={{.Names}}"  > $containerFileName
 
 echo "--------- start ---------- " 
-names=$(cat ./$containerFileName)
+containers=$(cat ./$containerFileName)
 
 rm -rf $dockerEnvFileName
 rm -rf $composerizeEnvFile
 
-for name in $names
+for c in $containers
 do 
-  if [ $name != "NAMES" ] 
-  then   
-    docker-papa container -c $name > $dockerEnvFileName
+    if [[ $c =~ "CONTAINER" ]]
+    then
+       continue
+    fi 
+    
+    if [[ $c =~ "ID=NAMES" ]]
+    then
+       continue
+    fi 
+
+    id=${c%%=*}
+    name=${c#*=} 
+     
+    docker-papa container -c $id > $dockerEnvFileName
     sed -i 's/docker run/composerize docker run/g' $dockerEnvFileName
-        
+ 
     containerName=${name#*name} 
     serviceName=$containerName 
     if [[ $containerName =~ "k8s_POD" ]]
@@ -41,7 +51,7 @@ do
     $(cat ./$dockerEnvFileName) >> $composerizeEnvFile     
     
     echo "service:   "  $serviceName
-  fi   
+
 done 
 
 rm -rf $containerFileName
