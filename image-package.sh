@@ -30,6 +30,7 @@ mv $imagesTmpFileName $imagesFileName
 # 保存容器镜像
 
 images=$(cat ./$imagesFileName)
+# 去掉双引号
 images=${images//\"}
 
 rm -rf $imagePackageName

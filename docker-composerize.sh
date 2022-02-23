@@ -80,7 +80,7 @@ do
     envValue=${env#*=}
 
   # 替换env.sh中value和compose文件中相同的值，并且compose中值的格式为${env.sh中key的名称}，如：${LC_MYSQL_ROOT_PASSWORD}
-    sed  "s|=$envValue|=\${$envKey}|g" $composerizeEnvFile > $composerizeEnvFileTmp
+    sed  "s|$envValue|\${$envKey}|g" $composerizeEnvFile > $composerizeEnvFileTmp
     mv $composerizeEnvFileTmp $composerizeEnvFile
 fi
 
